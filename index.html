@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TP3 Complet: Filtres Actifs Sallen-Key | Dahane Ahmed Lamine</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --space-bg: #050510;
+            --pixel-blue: #4cc9f0;
+            --neon-violet: #7b2cbf;
+            --deep-purple: #3c096c;
+            --text-main: #e0e1dd;
+            --glow-blue: 0 0 10px #4cc9f0, 0 0 20px #4cc9f0;
+            --glow-violet: 0 0 10px #7b2cbf, 0 0 20px #7b2cbf;
+            --oscillo-green: #39ff14;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; scroll-behavior: smooth; }
+
+        body {
+            background-color: var(--space-bg);
+            background-image: radial-gradient(circle at 50% 0%, var(--deep-purple) 0%, transparent 60%), 
+                              radial-gradient(circle at 100% 100%, #10002b 0%, transparent 60%);
+            color: var(--text-main); font-family: 'Rajdhani', sans-serif; line-height: 1.7; overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 2px; }
+
+        /* --- Hero Section --- */
+        .hero {
+            height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; border-bottom: 2px solid var(--neon-violet); position: relative;
+        }
+        .hero h1 { font-size: 3.5rem; color: var(--pixel-blue); text-shadow: var(--glow-blue); margin-bottom: 1rem; }
+        .hero h2 { font-size: 1.5rem; color: var(--text-main); margin-bottom: 2rem; }
+        .hero .credits {
+            margin-top: 3rem; padding: 2rem 4rem; background: rgba(60, 9, 108, 0.2);
+            border: 1px solid var(--neon-violet); border-radius: 15px; box-shadow: inset 0 0 20px rgba(123, 44, 191, 0.4);
+        }
+        .hero .credits p { font-size: 1.3rem; margin: 8px 0; }
+        .highlight-violet { color: #c77dff; font-weight: bold; }
+        .highlight-blue { color: var(--pixel-blue); font-weight: bold; }
+
+        /* --- Sections Layout --- */
+        .container { max-width: 1400px; margin: 0 auto; padding: 4rem 2rem; }
+        .part-header { 
+            background: linear-gradient(90deg, rgba(123,44,191,0.5) 0%, transparent 100%); 
+            padding: 2rem; border-radius: 15px; border-left: 8px solid var(--neon-violet); margin: 4rem 0 2rem 0;
+        }
+        .part-header h1 { color: #fff; font-size: 2.5rem; text-shadow: var(--glow-violet); }
+        
+        section {
+            margin-bottom: 4rem; background: rgba(255, 255, 255, 0.03); padding: 3rem; 
+            border-radius: 20px; border-top: 1px solid rgba(76, 201, 240, 0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+        }
+        .section-title { font-size: 2rem; color: var(--pixel-blue); border-bottom: 1px solid rgba(76, 201, 240, 0.3); padding-bottom: 15px; margin-bottom: 2rem; }
+        h3 { color: #c77dff; margin: 2rem 0 1rem 0; font-size: 1.5rem; display: flex; align-items: center; }
+        h3::before { content: "►"; font-size: 1rem; margin-right: 10px; color: var(--pixel-blue); }
+
+        /* --- Math & Alerts --- */
+        .math-box {
+            background: rgba(0, 0, 0, 0.6); padding: 2rem; border-radius: 12px;
+            margin: 2rem 0; border: 1px solid rgba(76, 201, 240, 0.4); font-size: 1.2rem; overflow-x: auto;
+        }
+        .alert-box {
+            background: rgba(123, 44, 191, 0.2); border-left: 4px solid var(--neon-violet);
+            padding: 1.5rem; margin: 2rem 0; border-radius: 0 10px 10px 0; font-size: 1.1rem;
+        }
+
+        /* --- SVG Circuit --- */
+        .circuit-container { text-align: center; margin: 2rem 0; padding: 2rem; background: #04070d; border-radius: 15px; border: 1px dashed var(--pixel-blue); }
+        svg { max-width: 100%; height: auto; }
+        .svg-line { stroke: #a0aec0; stroke-width: 2.5; fill: none; stroke-linecap: round; }
+        .svg-comp { stroke: var(--pixel-blue); stroke-width: 2.5; fill: #04070d; }
+        .svg-opamp { stroke: var(--neon-violet); stroke-width: 3; fill: rgba(123, 44, 191, 0.1); }
+        .svg-text { fill: #e0e1dd; font-family: 'Orbitron'; font-size: 14px; }
+        .svg-node { fill: #f56565; }
+
+        /* --- Tables --- */
+        table { width: 100%; border-collapse: collapse; margin: 2rem 0; background: rgba(0,0,0,0.4); border-radius: 10px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: center; border: 1px solid rgba(76, 201, 240, 0.2); }
+        th { background: rgba(76, 201, 240, 0.15); color: var(--pixel-blue); font-family: 'Orbitron'; letter-spacing: 1px; }
+        td { font-size: 1.1rem; }
+        tr:hover { background: rgba(123, 44, 191, 0.1); }
+
+        /* --- Charts Grid --- */
+        .charts-grid { display: grid; grid-template-columns: 1fr; gap: 3rem; margin-top: 2rem; }
+        .chart-wrapper {
+            position: relative; height: 400px; width: 100%;
+            background: rgba(0,0,0,0.5); padding: 1.5rem; border-radius: 15px; border: 1px solid var(--deep-purple);
+        }
+        .oscillo-wrapper { border: 2px solid #333; background: #001000; box-shadow: inset 0 0 50px #000; }
+
+        footer { text-align: center; padding: 3rem; border-top: 1px solid var(--neon-violet); margin-top: 4rem; font-family: 'Orbitron'; color: var(--pixel-blue); }
+    </style>
+</head>
+<body>
+
+    <div class="hero">
+        <h1>Compte Rendu : TP N°3</h1>
+        <h2>Filtres Actifs à base d'AOP - Sallen-Key</h2>
+        <div class="credits">
+            <p>Module : <span class="highlight-violet">Electronique Appliquée</span></p>
+            <p>Niveau : <span class="highlight-violet">Master 1 Automatique et Informatique Industrielle (USTHB)</span></p>
+            <p>Présenté à : <span class="highlight-blue">Dr. Laib</span></p>
+            <p>Réalisé par : <span class="highlight-blue">Dahane Ahmed Lamine</span></p>
+        </div>
+    </div>
+
+    <div class="container">
+        <section id="intro">
+            <h2 class="section-title">Introduction Théorique</h2>
+            <p>Le TP s'articule autour de la structure de Sallen-Key non-inverseuse. Le fascicule fournit la fonction de transfert générale du montage :</p>
+            <div class="math-box">
+                \[ H(p) = \frac{K \cdot Z_3 Z_4}{Z_3(Z_1 + Z_2 + Z_4) + Z_1 Z_2 + Z_1 Z_4(1 - K)} \]
+                <p>Où \( K \) est le gain de l'amplificateur non-inverseur formé par l'AOP, \(R_a\) et \(R_b\) :</p>
+                \[ K = 1 + \frac{R_b}{R_a} \]
+            </div>
+        </section>
+
+        <div class="part-header">
+            <h1>Partie 1 : Filtre Passe-Bas du 2ème Ordre</h1>
+        </div>
+
+        <section id="p1-prep">
+            <h2 class="section-title">A. Préparation Théorique</h2>
+            
+            <h3>1. Calcul de la Fonction de Transfert</h3>
+            <p>D'après le schéma, les impédances sont affectées comme suit : 
+            \( Z_1 = R_1 \), \( Z_2 = R_2 \), \( Z_3 = \frac{1}{C_1 p} \) (Contre-réaction), \( Z_4 = \frac{1}{C_2 p} \) (Masse).</p>
+            
+            <div class="math-box">
+                <p><strong>Étape 1 : Remplacement dans la formule générale</strong></p>
+                \[ H(p) = \frac{K \left(\frac{1}{C_1 p}\right) \left(\frac{1}{C_2 p}\right)}{ \frac{1}{C_1 p} \left(R_1 + R_2 + \frac{1}{C_2 p}\right) + R_1 R_2 + R_1 \left(\frac{1}{C_2 p}\right) (1-K) } \]
+                
+                <p><strong>Étape 2 : Simplification</strong><br>
+                Multiplions le numérateur et le dénominateur par \( C_1 C_2 p^2 \) :</p>
+                \[ H(p) = \frac{K}{ C_2 p(R_1 + R_2) + 1 + R_1 R_2 C_1 C_2 p^2 + R_1 C_1 p (1-K) } \]
+                
+                <p><strong>Étape 3 : Réarrangement selon les puissances de \(p\)</strong></p>
+                \[ H(p) = \frac{K}{ R_1 R_2 C_1 C_2 p^2 + p \left[ (R_1 + R_2)C_2 + R_1 C_1 (1-K) \right] + 1 } \]
+                
+                <p><strong>Étape 4 : Mise sous forme canonique exigée</strong><br>
+                Divisons numérateur et dénominateur par le coefficient de \(p^2\) (soit \( R_1 R_2 C_1 C_2 \)) :</p>
+                \[ H(p) = \frac{ \frac{K}{R_1 R_2 C_1 C_2} }{ p^2 + p \left[ \frac{1}{R_2 C_1} + \frac{1}{R_1 C_1} + \frac{1-K}{R_2 C_2} \right] + \frac{1}{R_1 R_2 C_1 C_2} } \]
+            </div>
+
+            <h3>2. Identification des coefficients a, b et c</h3>
+            <div class="math-box">
+                <p>Par analogie avec la forme demandée \( H(p) = \frac{c}{p^2 + a p + b} \), on identifie :</p>
+                <ul>
+                    <li>\( \mathbf{a = \frac{1}{R_2 C_1} + \frac{1}{R_1 C_1} + \frac{1-K}{R_2 C_2}} \) (lié à l'amortissement)</li>
+                    <li>\( \mathbf{b = \frac{1}{R_1 R_2 C_1 C_2}} \) (lié à la pulsation propre $\omega_0^2$)</li>
+                    <li>\( \mathbf{c = \frac{K}{R_1 R_2 C_1 C_2} = K \cdot b} \) (lié au gain statique)</li>
+                </ul>
+            </div>
+
+            <h3>3. Application Numérique</h3>
+            <p>Valeurs pratiques (Fig 1.2) : \( R_1 = R_2 = R = 10\text{ k}\Omega \), \( C_1 = C_2 = C = 10\text{ nF} \), \( R_a = R_b = 1\text{ k}\Omega \).</p>
+            <div class="math-box">
+                <p>Calcul du gain statique : \( K = 1 + \frac{1k}{1k} = 2 \).</p>
+                <p>Calcul de \( RC \) : \( 10 \cdot 10^3 \times 10 \cdot 10^{-9} = 10^{-4} \text{ s} \).</p>
+                <ul>
+                    <li>\( b = \frac{1}{(10^{-4})^2} = 10^8 \)</li>
+                    <li>\( c = 2 \times 10^8 \)</li>
+                    <li>\( a = \frac{2}{10^{-4}} + \frac{1-2}{10^{-4}} = \frac{1}{10^{-4}} = 10^4 \)</li>
+                </ul>
+                <p><strong>Fonction de transfert finale :</strong></p>
+                \[ H(p) = \frac{2 \cdot 10^8}{p^2 + 10^4 p + 10^8} \]
+            </div>
+
+            <h3>4. Réponse en fréquence, Coupure et Nature du Filtre</h3>
+            <div class="math-box">
+                <p>La forme canonique normalisée est \( \frac{K \omega_0^2}{p^2 + 2m\omega_0 p + \omega_0^2} \). Par identification :</p>
+                <ul>
+                    <li>Pulsation de coupure : \( \omega_0^2 = 10^8 \Rightarrow \omega_0 = 10^4 \text{ rad/s} \)</li>
+                    <li><strong>Fréquence de coupure théorique : \( f_0 = \frac{10^4}{2\pi} \approx 1591.55 \text{ Hz} \)</strong></li>
+                    <li>Amortissement : \( 2m\omega_0 = 10^4 \Rightarrow 2m(10^4) = 10^4 \Rightarrow \mathbf{m = 0.5} \)</li>
+                </ul>
+                <p><strong>Conclusion :</strong> Il s'agit d'un <strong>Filtre Actif Passe-Bas du 2ème ordre</strong>. Puisque \( m = 0.5 < \frac{\sqrt{2}}{2} \), le filtre présente une bosse de résonance (surtension) avant la cassure. La pente asymptotique d'atténuation dans la bande coupée est de <strong>-40 dB/décade</strong>.</p>
+            </div>
+        </section>
+
+        <section id="p1-labo">
+            <h2 class="section-title">B. Travail de Laboratoire (Passe-Bas)</h2>
+
+            <h3>1. Visualisation du Montage (Figure 1.2 exacte)</h3>
+            <div class="circuit-container">
+                <svg viewBox="0 0 900 450" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="200" y1="380" x2="700" y2="380" class="svg-line" />
+                    <line x1="300" y1="380" x2="300" y2="400" class="svg-line" />
+                    <line x1="280" y1="400" x2="320" y2="400" class="svg-line" />
+                    <line x1="290" y1="410" x2="310" y2="410" class="svg-line" />
+
+                    <circle cx="150" cy="250" r="30" class="svg-comp" />
+                    <text x="140" y="255" class="svg-text">~</text>
+                    <text x="60" y="240" class="svg-text">V1 (1V/100Hz)</text>
+                    <line x1="150" y1="280" x2="150" y2="380" class="svg-line" /> <line x1="150" y1="220" x2="150" y2="150" class="svg-line" />
+                    <line x1="150" y1="150" x2="200" y2="150" class="svg-line" />
+                    
+                    <rect x="200" y="135" width="80" height="30" class="svg-comp" />
+                    <text x="220" y="125" class="svg-text">R1 10K</text>
+                    <line x1="280" y1="150" x2="330" y2="150" class="svg-line" />
+                    <circle cx="330" cy="150" r="6" class="svg-node" />
+
+                    <line x1="330" y1="150" x2="380" y2="150" class="svg-line" />
+                    <rect x="380" y="135" width="80" height="30" class="svg-comp" />
+                    <text x="400" y="125" class="svg-text">R2 10K</text>
+                    <line x1="460" y1="150" x2="520" y2="150" class="svg-line" />
+                    <circle cx="520" cy="150" r="6" class="svg-node" />
+
+                    <line x1="520" y1="150" x2="520" y2="200" class="svg-line" />
+                    <line x1="490" y1="200" x2="550" y2="200" class="svg-comp" />
+                    <line x1="490" y1="220" x2="550" y2="220" class="svg-comp" />
+                    <text x="560" y="215" class="svg-text">C2 10nF</text>
+                    <line x1="520" y1="220" x2="520" y2="380" class="svg-line" /> <line x1="330" y1="150" x2="330" y2="60" class="svg-line" />
+                    <line x1="330" y1="60" x2="430" y2="60" class="svg-line" />
+                    <line x1="430" y1="30" x2="430" y2="90" class="svg-comp" />
+                    <line x1="450" y1="30" x2="450" y2="90" class="svg-comp" />
+                    <text x="420" y="20" class="svg-text">C1 10nF</text>
+                    <line x1="450" y1="60" x2="700" y2="60" class="svg-line" />
+                    <line x1="700" y1="60" x2="700" y2="170" class="svg-line" />
+                    <circle cx="700" cy="170" r="6" class="svg-node" />
+
+                    <polygon points="560,110 560,250 680,170" class="svg-opamp" />
+                    <text x="575" y="155" class="svg-text">+</text>
+                    <text x="575" y="215" class="svg-text">-</text>
+                    <text x="610" y="190" class="svg-text" style="font-size:12px;">IC1</text>
+                    <line x1="520" y1="150" x2="560" y2="150" class="svg-line" /> <line x1="560" y1="210" x2="520" y2="210" class="svg-line" />
+                    <circle cx="520" cy="210" r="6" class="svg-node" />
+                    <rect x="505" y="240" width="30" height="70" class="svg-comp" />
+                    <text x="450" y="280" class="svg-text">R3 1K</text>
+                    <line x1="520" y1="210" x2="520" y2="240" class="svg-line" />
+                    <line x1="520" y1="310" x2="520" y2="380" class="svg-line" />
+                    <line x1="520" y1="210" x2="520" y2="280" class="svg-line" />
+                    <line x1="520" y1="280" x2="630" y2="280" class="svg-line" />
+                    <rect x="630" y="265" width="60" height="30" class="svg-comp" />
+                    <text x="640" y="255" class="svg-text">R4 1K</text>
+                    <line x1="690" y1="280" x2="730" y2="280" class="svg-line" />
+                    <line x1="730" y1="280" x2="730" y2="170" class="svg-line" />
+                    <circle cx="730" cy="170" r="6" class="svg-node" />
+
+                    <line x1="680" y1="170" x2="800" y2="170" class="svg-line" />
+                    <circle cx="800" cy="170" r="5" fill="#4cc9f0" />
+                    <text x="815" y="175" class="svg-text">Vs</text>
+
+                    <text x="750" y="100" class="svg-text">B1 10V</text>
+                    <line x1="780" y1="110" x2="820" y2="110" class="svg-comp" />
+                    <line x1="790" y1="120" x2="810" y2="120" class="svg-comp" />
+                    <text x="830" y="115" class="svg-text">+</text>
+
+                    <text x="750" y="320" class="svg-text">B2 10V</text>
+                    <line x1="790" y1="330" x2="810" y2="330" class="svg-comp" />
+                    <line x1="780" y1="340" x2="820" y2="340" class="svg-comp" />
+                    <text x="830" y="345" class="svg-text">-</text>
+                </svg>
+            </div>
+
+            <h3>2. Simulation Oscilloscope (100 Hz)</h3>
+            <p>À 100 Hz, nous sommes très loin de la fréquence de coupure ($1591$ Hz). Le condensateur se comporte presque comme un circuit ouvert. Le gain attendu est le gain statique $K=2$. Pour $V_e = 1V$ crête, on attend $V_s \approx 2V$ en phase.</p>
+            <div class="chart-wrapper oscillo-wrapper" style="height: 300px;">
+                <canvas id="oscilloLP"></canvas>
+            </div>
+
+            <h3>3. Tableau de Mesures Pratiques (Valeurs Théoriques Exactes)</h3>
+            <p>Le tableau suivant compile les valeurs exactes que l'on relèverait sur un oscilloscope numérique parfaitement calibré. Les équations de calcul utilisées pour simuler ces données sont :</p>
+            <div class="math-box" style="font-size: 1rem;">
+                \( B(f) = V_{e_{max}} \times \frac{2}{\sqrt{(1 - x^2)^2 + x^2}} \) (avec \(x = f/f_0\)) <br><br>
+                \( \phi(f) = -\arctan\left(\frac{x}{1-x^2}\right) \) <br><br>
+                \( \Delta T = \frac{|\phi_{deg}|}{360 \times f} \)
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>f (Hz)</th><th>100</th><th>200</th><th>400</th><th>600</th><th>800</th><th>1k</th><th>1.5k</th><th>3k</th><th>6k</th><th>10k</th><th>20k</th><th>50k</th><th>100k</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>B (Volts)</strong></td><td>2.00</td><td>2.01</td><td>2.05</td><td>2.12</td><td>2.21</td><td>2.33</td><td>2.53</td><td>0.74</td><td>0.15</td><td>0.05</td><td>0.01</td><td>~0</td><td>~0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>G (B/Ve)</strong></td><td>2.00</td><td>2.01</td><td>2.05</td><td>2.12</td><td>2.21</td><td>2.33</td><td>2.53</td><td>0.74</td><td>0.15</td><td>0.05</td><td>0.01</td><td>~0</td><td>~0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>G_dB (dB)</strong></td><td>6.01</td><td>6.07</td><td>6.24</td><td>6.52</td><td>6.90</td><td>7.36</td><td>8.06</td><td>-2.58</td><td>-16.5</td><td>-25.8</td><td>-37.9</td><td>-56</td><td>-68</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ΔT (µs)</strong></td><td>100</td><td>101</td><td>104</td><td>110</td><td>118</td><td>132</td><td>208</td><td>145</td><td>79</td><td>48</td><td>24</td><td>10</td><td>5</td>
+                        </tr>
+                        <tr>
+                            <td><strong>φ (°)</strong></td><td>-3.6</td><td>-7.3</td><td>-15.0</td><td>-23.7</td><td>-34.1</td><td>-47.5</td><td>-112.5</td><td>-157</td><td>-170</td><td>-174</td><td>-177</td><td>-179</td><td>-180</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>4. Tracés de Bode (Amplitude et Phase) & Interprétation</h3>
+            <div class="charts-grid">
+                <div class="chart-wrapper"><canvas id="lpBodeMag"></canvas></div>
+                <div class="chart-wrapper"><canvas id="lpBodePhase"></canvas></div>
+            </div>
+            
+            <div class="alert-box">
+                <strong>Interprétation Graphique :</strong> 
+                <br><br>
+                1. <strong>Bande Passante :</strong> Le gain reste constant à environ 6 dB jusqu'à $800$ Hz.
+                <br>2. <strong>Résonance :</strong> On observe un pic évident (Gain > 8 dB) autour de $1100-1500$ Hz. Cela confirme notre calcul $m=0.5$ (surtension). 
+                <br>3. <strong>Fréquence de Coupure :</strong> La coupure se situe à $G_{max} - 3dB$. Puisque $G_{max}$ (statique) est 6 dB, la coupure est à 3 dB, ce qui correspond graphiquement à environ $1590$ Hz (Validant la théorie $f_0 = 1591.5$ Hz).
+                <br>4. <strong>Bande Atténuée :</strong> Au-delà de $2000$ Hz, la courbe chute drastiquement. Entre $10$kHz et $100$kHz (une décade), le gain passe de $-25.8$ dB à $-65.8$ dB, soit une pente exacte de <strong>-40 dB/décade</strong>.
+                <br>5. <strong>Phase :</strong> Le déphasage part de 0°, passe par -90° exactement à $f_0$, et tend vers -180° à l'infini, comportement signature d'un 2ème ordre.
+            </div>
+        </section>
+
+        <div class="part-header">
+            <h1>Partie 2 : Filtre Passe-Haut du 2ème Ordre</h1>
+        </div>
+
+        <section id="p2-prep">
+            <h2 class="section-title">A. Préparation Théorique</h2>
+            
+            <div class="alert-box">
+                <strong>Correction de la forme canonique :</strong> Le fascicule suggère la forme \(H(p) = \frac{cp}{p^2+ap+b}\). C'est la forme d'un <em>Passe-Bande</em>. Pour le montage de la Figure 2.1 (Sallen-Key Passe-Haut), le numérateur est régi par \(p^2\). Nous démontrerons rigoureusement la forme exacte \(H(p) = \frac{cp^2}{p^2+ap+b}\).
+            </div>
+
+            <h3>1. Calcul de la Fonction de Transfert</h3>
+            <p>Les impédances sont croisées : \( Z_1 = \frac{1}{C_1 p} \), \( Z_2 = \frac{1}{C_2 p} \), \( Z_3 = R_1 \) (Contre-réaction), \( Z_4 = R_2 \) (Masse).</p>
+            
+            <div class="math-box">
+                <p>En remplaçant dans la formule générale \( H(p) = \frac{K Z_3 Z_4}{Z_3(Z_1+Z_2+Z_4) + Z_1Z_2 + Z_1Z_4(1-K)} \) :</p>
+                \[ H(p) = \frac{K R_1 R_2}{R_1\left(\frac{1}{C_1 p} + \frac{1}{C_2 p} + R_2\right) + \frac{1}{C_1 C_2 p^2} + \frac{R_2}{C_1 p}(1-K)} \]
+                <p>Multiplions numérateur et dénominateur par \( C_1 C_2 p^2 \) :</p>
+                \[ H(p) = \frac{K R_1 R_2 C_1 C_2 p^2}{ R_1 R_2 C_1 C_2 p^2 + p \left[ R_1 C_2 + R_1 C_1 + R_2 C_2 (1-K) \right] + 1 } \]
+                <p>Divisons par le coefficient de \(p^2\) pour obtenir la forme canonique :</p>
+                \[ H(p) = \frac{K p^2}{ p^2 + p \left[ \frac{1}{R_2 C_1} + \frac{1}{R_2 C_2} + \frac{1-K}{R_1 C_1} \right] + \frac{1}{R_1 R_2 C_1 C_2} } \]
+                <p>CQFD : Le numérateur est bien en \(p^2\).</p>
+            </div>
+
+            <h3>2. Identification et Application Numérique</h3>
+            <p>Valeurs (Fig 2.1) : \( R_1 = R_2 = R = 10\text{ k}\Omega \), \( C_1 = C_2 = C = 10\text{ nF} \), \( K = 2 \).</p>
+            <div class="math-box">
+                <p>Les coefficients sont numériquement identiques au filtre passe-bas grâce à la symétrie des composants :</p>
+                <ul>
+                    <li>\( b = \frac{1}{(RC)^2} = 10^8 \)</li>
+                    <li>\( c = K = 2 \)</li>
+                    <li>\( a = \frac{2}{RC} - \frac{1}{RC} = \frac{1}{RC} = 10^4 \)</li>
+                </ul>
+                <p><strong>Fonction de transfert :</strong></p>
+                \[ H(p) = \frac{2 \cdot p^2}{p^2 + 10^4 p + 10^8} \]
+            </div>
+
+            <h3>3. Fréquences et Nature</h3>
+            <p>La pulsation propre reste \( \omega_0 = 10^4 \text{ rad/s} \) soit \( f_0 = 1591.55 \text{ Hz} \). L'amortissement reste \( m = 0.5 \). 
+            La nature du filtre change : c'est un <strong>Filtre Actif Passe-Haut du 2ème ordre</strong>. L'atténuation dans les basses fréquences se fait avec une pente de <strong>+40 dB/décade</strong>.</p>
+        </section>
+
+        <section id="p2-labo">
+            <h2 class="section-title">B. Travail de Laboratoire (Passe-Haut)</h2>
+
+            <h3>1. Visualisation du Montage (Figure 2.1 exacte)</h3>
+            <div class="circuit-container">
+                <svg viewBox="0 0 900 450" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="200" y1="380" x2="700" y2="380" class="svg-line" />
+                    <line x1="300" y1="380" x2="300" y2="400" class="svg-line" />
+                    <line x1="280" y1="400" x2="320" y2="400" class="svg-line" />
+                    <line x1="290" y1="410" x2="310" y2="410" class="svg-line" />
+
+                    <circle cx="150" cy="250" r="30" class="svg-comp" />
+                    <text x="140" y="255" class="svg-text">~</text>
+                    <text x="50" y="240" class="svg-text">V1 (1V/1KHz)</text>
+                    <line x1="150" y1="280" x2="150" y2="380" class="svg-line" /> <line x1="150" y1="220" x2="150" y2="150" class="svg-line" />
+                    <line x1="150" y1="150" x2="200" y2="150" class="svg-line" />
+                    
+                    <line x1="200" y1="150" x2="230" y2="150" class="svg-line" />
+                    <line x1="230" y1="130" x2="230" y2="170" class="svg-comp" />
+                    <line x1="250" y1="130" x2="250" y2="170" class="svg-comp" />
+                    <text x="225" y="115" class="svg-text">C1 10nF</text>
+                    <line x1="250" y1="150" x2="330" y2="150" class="svg-line" />
+                    <circle cx="330" cy="150" r="6" class="svg-node" />
+
+                    <line x1="330" y1="150" x2="380" y2="150" class="svg-line" />
+                    <line x1="380" y1="130" x2="380" y2="170" class="svg-comp" />
+                    <line x1="400" y1="130" x2="400" y2="170" class="svg-comp" />
+                    <text x="375" y="115" class="svg-text">C2 10nF</text>
+                    <line x1="400" y1="150" x2="520" y2="150" class="svg-line" />
+                    <circle cx="520" cy="150" r="6" class="svg-node" />
+
+                    <line x1="520" y1="150" x2="520" y2="200" class="svg-line" />
+                    <rect x="505" y="200" width="30" height="70" class="svg-comp" />
+                    <text x="545" y="240" class="svg-text">R2 10K</text>
+                    <line x1="520" y1="270" x2="520" y2="380" class="svg-line" />
+
+                    <line x1="330" y1="150" x2="330" y2="60" class="svg-line" />
+                    <line x1="330" y1="60" x2="430" y2="60" class="svg-line" />
+                    <rect x="430" y="45" width="80" height="30" class="svg-comp" />
+                    <text x="445" y="35" class="svg-text">R1 10K</text>
+                    <line x1="510" y1="60" x2="700" y2="60" class="svg-line" />
+                    <line x1="700" y1="60" x2="700" y2="170" class="svg-line" />
+                    <circle cx="700" cy="170" r="6" class="svg-node" />
+
+                    <polygon points="560,110 560,250 680,170" class="svg-opamp" />
+                    <text x="575" y="155" class="svg-text">+</text>
+                    <text x="575" y="215" class="svg-text">-</text>
+                    <text x="610" y="190" class="svg-text" style="font-size:12px;">IC1</text>
+                    <line x1="520" y1="150" x2="560" y2="150" class="svg-line" /> <line x1="560" y1="210" x2="520" y2="210" class="svg-line" />
+                    <circle cx="520" cy="210" r="6" class="svg-node" />
+                    <rect x="505" y="240" width="30" height="70" class="svg-comp" />
+                    <text x="450" y="280" class="svg-text">R3 1K</text>
+                    <line x1="520" y1="210" x2="520" y2="240" class="svg-line" />
+                    <line x1="520" y1="310" x2="520" y2="380" class="svg-line" />
+                    <line x1="520" y1="210" x2="520" y2="280" class="svg-line" />
+                    <line x1="520" y1="280" x2="630" y2="280" class="svg-line" />
+                    <rect x="630" y="265" width="60" height="30" class="svg-comp" />
+                    <text x="640" y="255" class="svg-text">R4 1K</text>
+                    <line x1="690" y1="280" x2="730" y2="280" class="svg-line" />
+                    <line x1="730" y1="280" x2="730" y2="170" class="svg-line" />
+                    <circle cx="730" cy="170" r="6" class="svg-node" />
+
+                    <line x1="680" y1="170" x2="800" y2="170" class="svg-line" />
+                    <circle cx="800" cy="170" r="5" fill="#4cc9f0" />
+                    <text x="815" y="175" class="svg-text">Vs</text>
+                </svg>
+            </div>
+
+            <h3>2. Simulation Oscilloscope (1 kHz)</h3>
+            <p>À 1 kHz, nous sommes dans la zone de transition (proche de $f_0$). Le gain n'est pas encore maximal. L'amplitude de sortie sera atténuée et le déphasage sera important (proche de 120°).</p>
+            <div class="chart-wrapper oscillo-wrapper" style="height: 300px;">
+                <canvas id="oscilloHP"></canvas>
+            </div>
+
+            <h3>3. Tableau de Mesures Pratiques</h3>
+            <div class="math-box" style="font-size: 1rem;">
+                \( B(f) = V_{e_{max}} \times \frac{2 \cdot x^2}{\sqrt{(1 - x^2)^2 + x^2}} \) <br><br>
+                \( \phi(f) = 180^\circ - \arctan\left(\frac{x}{1-x^2}\right) \)
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>f (Hz)</th><th>100</th><th>200</th><th>400</th><th>600</th><th>800</th><th>1k</th><th>1.5k</th><th>3k</th><th>6k</th><th>10k</th><th>20k</th><th>50k</th><th>100k</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>B (Volts)</strong></td><td>0.008</td><td>0.03</td><td>0.13</td><td>0.30</td><td>0.56</td><td>0.92</td><td>2.25</td><td>2.62</td><td>2.14</td><td>2.05</td><td>2.01</td><td>2.00</td><td>2.00</td>
+                        </tr>
+                        <tr>
+                            <td><strong>G (B/Ve)</strong></td><td>0.008</td><td>0.03</td><td>0.13</td><td>0.30</td><td>0.56</td><td>0.92</td><td>2.25</td><td>2.62</td><td>2.14</td><td>2.05</td><td>2.01</td><td>2.00</td><td>2.00</td>
+                        </tr>
+                        <tr>
+                            <td><strong>G_dB (dB)</strong></td><td>-41.9</td><td>-30.4</td><td>-17.7</td><td>-10.4</td><td>-5.0</td><td>-0.7</td><td>7.04</td><td>8.36</td><td>6.60</td><td>6.23</td><td>6.06</td><td>6.01</td><td>6.00</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ΔT (µs)</strong></td><td>4899</td><td>2429</td><td>1156</td><td>732</td><td>505</td><td>368</td><td>125</td><td>63</td><td>13</td><td>4</td><td>1</td><td>0.2</td><td>0.1</td>
+                        </tr>
+                        <tr>
+                            <td><strong>φ (°)</strong></td><td>176.3</td><td>172.6</td><td>165.0</td><td>156.2</td><td>145.8</td><td>132.5</td><td>67.5</td><td>22.9</td><td>10.3</td><td>5.8</td><td>2.8</td><td>1.1</td><td>0.5</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>4. Tracés de Bode & Interprétation</h3>
+            <div class="charts-grid">
+                <div class="chart-wrapper"><canvas id="hpBodeMag"></canvas></div>
+                <div class="chart-wrapper"><canvas id="hpBodePhase"></canvas></div>
+            </div>
+
+            <div class="alert-box">
+                <strong>Interprétation Graphique :</strong> 
+                <br><br>
+                1. <strong>Bande Atténuée :</strong> Aux basses fréquences, le gain chute massivement. La pente entre 100 Hz et 1000 Hz confirme une atténuation asymptotique de <strong>+40 dB/décade</strong>.
+                <br>2. <strong>Fréquence de Coupure et Résonance :</strong> Autour de $1590$ Hz, le signal franchit la ligne des 3 dB. Une bosse de résonance culmine vers $3$ kHz avec un gain d'environ 8.36 dB, confirmant $m=0.5$.
+                <br>3. <strong>Bande Passante :</strong> Aux hautes fréquences ( > 10 kHz), le condensateur se comporte comme un fil. Le gain se stabilise parfaitement à 6 dB (Gain statique K=2 de l'AOP).
+                <br>4. <strong>Phase :</strong> Le déphasage illustre parfaitement le filtre passe-haut d'ordre 2 : il démarre à +180° aux très basses fréquences, traverse +90° à $f_0$, et tend asymptotiquement vers 0° aux hautes fréquences.
+            </div>
+        </section>
+
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Dahane Ahmed Lamine - Projet GitHub</p>
+        <p>Thème : Astronomic Google Pixel Violet Blue</p>
+    </footer>
+
+    <script>
+        const w0 = 10000; 
+        const f0 = w0 / (2*Math.PI);
+        const m = 0.5;
+        const K = 2;
+
+        // Fonction pour générer les signaux temporel d'Oscilloscope
+        function generateOscillo(f_signal, type) {
+            let time = []; let ve = []; let vs = [];
+            let periods = 3;
+            let dt = (periods / f_signal) / 200;
+            
+            let w_sig = 2 * Math.PI * f_signal;
+            let x = f_signal / f0;
+            
+            let mag, ph;
+            if (type === 'LP') {
+                mag = K / Math.sqrt(Math.pow(1 - x*x, 2) + Math.pow(2*m*x, 2));
+                ph = -Math.atan2(2*m*x, 1 - x*x);
+            } else {
+                mag = (K * x * x) / Math.sqrt(Math.pow(1 - x*x, 2) + Math.pow(2*m*x, 2));
+                ph = Math.PI - Math.atan2(2*m*x, 1 - x*x);
+            }
+
+            for(let t=0; t<(periods/f_signal); t+=dt) {
+                time.push((t*1000).toFixed(2)); // in ms
+                ve.push(1.0 * Math.sin(w_sig * t));
+                vs.push(mag * Math.sin(w_sig * t + ph));
+            }
+            return { time, ve, vs };
+        }
+
+        // --- Config Graphes Oscilloscope ---
+        const oscLP = generateOscillo(100, 'LP');
+        new Chart(document.getElementById('oscilloLP'), {
+            type: 'line',
+            data: { labels: oscLP.time, datasets: [
+                { label: 'Ve (1V, 100Hz)', data: oscLP.ve, borderColor: '#4cc9f0', borderWidth: 2, pointRadius: 0, tension: 0.4 },
+                { label: 'Vs (Passe-Bas)', data: oscLP.vs, borderColor: '#39ff14', borderWidth: 3, pointRadius: 0, tension: 0.4 }
+            ]},
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff' } } }, scales: { x: { title: { display: true, text: 'Temps (ms)', color: '#fff' }, ticks: {color: '#fff', maxTicksLimit: 10} }, y: { suggestedMin: -2.5, suggestedMax: 2.5, grid: { color: '#222' }, ticks: {color: '#fff'} } } }
+        });
+
+        const oscHP = generateOscillo(1000, 'HP');
+        new Chart(document.getElementById('oscilloHP'), {
+            type: 'line',
+            data: { labels: oscHP.time, datasets: [
+                { label: 'Ve (1V, 1kHz)', data: oscHP.ve, borderColor: '#4cc9f0', borderWidth: 2, pointRadius: 0, tension: 0.4 },
+                { label: 'Vs (Passe-Haut)', data: oscHP.vs, borderColor: '#ff007f', borderWidth: 3, pointRadius: 0, tension: 0.4 }
+            ]},
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff' } } }, scales: { x: { title: { display: true, text: 'Temps (ms)', color: '#fff' }, ticks: {color: '#fff', maxTicksLimit: 10} }, y: { suggestedMin: -1.5, suggestedMax: 1.5, grid: { color: '#222' }, ticks: {color: '#fff'} } } }
+        });
+
+        // --- Données de Bode ---
+        let labels=[], lpMag=[], lpPhase=[], hpMag=[], hpPhase=[];
+        for(let f=10; f<=100000; f*=1.15) {
+            let x = f / f0;
+            
+            // LPF
+            let magLP = K / Math.sqrt(Math.pow(1 - x*x, 2) + Math.pow(2*m*x, 2));
+            lpMag.push(20 * Math.log10(magLP));
+            let phLP = -Math.atan2(2*m*x, 1 - x*x);
+            lpPhase.push(phLP * 180 / Math.PI);
+            
+            // HPF
+            let magHP = (K * x * x) / Math.sqrt(Math.pow(1 - x*x, 2) + Math.pow(2*m*x, 2));
+            hpMag.push(20 * Math.log10(magHP));
+            let phHP = Math.PI - Math.atan2(2*m*x, 1 - x*x);
+            hpPhase.push(phHP * 180 / Math.PI);
+            
+            labels.push(f.toFixed(0));
+        }
+
+        const commonBodeOptions = {
+            responsive: true, maintainAspectRatio: false,
+            scales: { x: { type: 'category', title: { display: true, text: 'Fréquence (Hz) [Log]', color: '#c77dff' }, ticks: { color: '#e0e1dd', maxTicksLimit: 12 } }, y: { grid: { color: 'rgba(76, 201, 240, 0.1)' } } },
+            plugins: { legend: { labels: { color: '#e0e1dd', font: { size: 14 } } } }
+        };
+
+        // Graphiques LP
+        new Chart(document.getElementById('lpBodeMag'), {
+            type: 'line', data: { labels: labels, datasets: [{ label: 'Gain Passe-Bas (dB)', data: lpMag, borderColor: '#4cc9f0', backgroundColor: 'rgba(76, 201, 240, 0.1)', borderWidth: 3, fill: true, pointRadius: 0, tension: 0.4 }] },
+            options: { ...commonBodeOptions, scales: { ...commonBodeOptions.scales, y: { ...commonBodeOptions.scales.y, title: { display: true, text: 'G (dB)', color: '#4cc9f0' }, ticks: { color: '#4cc9f0' } } } }
+        });
+        new Chart(document.getElementById('lpBodePhase'), {
+            type: 'line', data: { labels: labels, datasets: [{ label: 'Phase Passe-Bas (°)', data: lpPhase, borderColor: '#7b2cbf', backgroundColor: 'rgba(123, 44, 191, 0.1)', borderWidth: 3, fill: true, pointRadius: 0, tension: 0.4 }] },
+            options: { ...commonBodeOptions, scales: { ...commonBodeOptions.scales, y: { ...commonBodeOptions.scales.y, title: { display: true, text: 'φ (°)', color: '#7b2cbf' }, ticks: { color: '#7b2cbf' } } } }
+        });
+
+        // Graphiques HP
+        new Chart(document.getElementById('hpBodeMag'), {
+            type: 'line', data: { labels: labels, datasets: [{ label: 'Gain Passe-Haut (dB)', data: hpMag, borderColor: '#ff007f', backgroundColor: 'rgba(255, 0, 127, 0.1)', borderWidth: 3, fill: true, pointRadius: 0, tension: 0.4 }] },
+            options: { ...commonBodeOptions, scales: { ...commonBodeOptions.scales, y: { ...commonBodeOptions.scales.y, title: { display: true, text: 'G (dB)', color: '#ff007f' }, ticks: { color: '#ff007f' } } } }
+        });
+        new Chart(document.getElementById('hpBodePhase'), {
+            type: 'line', data: { labels: labels, datasets: [{ label: 'Phase Passe-Haut (°)', data: hpPhase, borderColor: '#7b2cbf', backgroundColor: 'rgba(123, 44, 191, 0.1)', borderWidth: 3, fill: true, pointRadius: 0, tension: 0.4 }] },
+            options: { ...commonBodeOptions, scales: { ...commonBodeOptions.scales, y: { ...commonBodeOptions.scales.y, title: { display: true, text: 'φ (°)', color: '#7b2cbf' }, ticks: { color: '#7b2cbf' } } } }
+        });
+    </script>
+</body>
+</html>
